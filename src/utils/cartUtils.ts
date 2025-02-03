@@ -2,7 +2,7 @@
 
 import { Product } from "../types/type";
 
-export const updateStock = (products: Product[], id: number, amount: number): Product[] => {
+export const updateProduct = (products: Product[], id: number, amount: number): Product[] => {
   return products.map((p) =>
     p.id === id ? { ...p, stock: Math.max(0, p.stock + amount) } : p
   );

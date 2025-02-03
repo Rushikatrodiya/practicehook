@@ -1,15 +1,15 @@
-// src/context/CartContext.tsx
-import React, { createContext, useState, ReactNode, useEffect } from "react";
-import { updateStock, updateCart } from "../utils/cartUtils";
-import { fetchProducts } from "../service/api";
-import { CartContextType, Product , CartProviderProps } from "../types/type";
+import React, { useState, createContext, useEffect } from 'react';
+import { CartContextType, CartProviderProps, Product } from '../types/type';
+import { updateCart , updateProduct} from '../utils/cartUtils';
+import { fetchProducts } from '../service/api';
 
-export const CartContext = createContext<CartContextType | undefined>(undefined); // Use undefined as the initial value
+
+ export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, setCart] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-
+ 
   useEffect(() => {
     const loadProducts = async () => {
       const data = await fetchProducts();
@@ -17,9 +17,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     };
     loadProducts();
   }, []);
+  
 
   const modifyStock = (id: number, amount: number) => {
-    setProducts((prev) => updateStock(prev, id, amount));
+    setProducts((prev) => updateProduct(prev, id, amount));
   };
 
   const modifyCart = (id: number, amount: number) => {
@@ -61,6 +62,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setCart([]);
   };
 
+  
   return (
     <CartContext.Provider
       value={{
@@ -77,5 +79,3 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     </CartContext.Provider>
   );
 };
-
-export default CartProvider;
