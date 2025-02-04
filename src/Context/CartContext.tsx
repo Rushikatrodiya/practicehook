@@ -1,6 +1,5 @@
 import React, { createContext } from "react";
 import { CartContextType, CartProviderProps, Product } from "../types/type";
-import { updateCart, updateProduct } from "../utils/cartUtils";
 import { fetchCart, fetchProducts } from "../service/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -19,37 +18,56 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     queryFn: fetchCart,
   });
 
+  // Modify product stock directly within the CartProvider
   const modifyStock = (id: number, amount: number) => {
-    queryClient.setQueryData<Product[]>(["products"], (prev = []) => updateProduct(prev, id, amount));
+    queryClient.setQueryData<Product[]>(["products"], (prev = []) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, stock: Math.max(0, p.stock + amount) } : p
+      )
+    );
   };
 
+  // Modify cart directly within the CartProvider
   const modifyCart = (id: number, amount: number) => {
-    queryClient.setQueryData<Product[]>(["cart"], (prev = []) => updateCart(prev, products, id, amount));
+    queryClient.setQueryData<Product[]>(["cart"], (prev = []) => {
+      const existingItem = prev.find((item) => item.id === id);
+      if (existingItem) {
+        return prev.map((item) =>
+          item.id === id ? { ...item, stock: item.stock + amount } : item
+        );
+      } else {
+        const product = products.find((p) => p.id === id);
+        if (!product || product.stock <= 0) return prev;
+        return [...prev, { ...product, stock: 1 }];
+      }
+    });
   };
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) return;
-    modifyStock(product.id, -1);
-    modifyCart(product.id, 1);
+    modifyStock(product.id, -1); // Decrease product stock
+    modifyCart(product.id, 1); // Add to cart
   };
 
   const increaseQuantity = (id: number) => {
     const product = products.find((p) => p.id === id);
     if (!product || product.stock <= 0) return;
-    modifyStock(id, -1);
-    modifyCart(id, 1);
+    modifyStock(id, -1); // Decrease product stock
+    modifyCart(id, 1); // Increase cart quantity
   };
 
   const decreaseQuantity = (id: number) => {
     const cartItem = cart.find((item) => item.id === id);
     if (!cartItem || cartItem.stock <= 1) return;
-    modifyStock(id, 1);
-    modifyCart(id, -1);
+    modifyStock(id, 1); // Increase product stock
+    modifyCart(id, -1); // Decrease cart quantity
   };
 
   const removeItem = (product: Product) => {
-    queryClient.setQueryData<Product[]>(["cart"], (prev = []) => prev.filter((item) => item.id !== product.id));
-    modifyStock(product.id, product.stock);
+    queryClient.setQueryData<Product[]>(["cart"], (prev = []) =>
+      prev.filter((item) => item.id !== product.id)
+    );
+    modifyStock(product.id, product.stock); // Restore product stock
   };
 
   const clearCart = () => {
