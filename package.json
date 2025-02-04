@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-     "server": "json-server --watch data.json --port 5000 --host localhost",
-  "dev:full": "concurrently \"npm run server\" \"npm run dev\""
+    "server": "json-server --watch data.json --port 5000 --host localhost",
+    "dev:full": "concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.66.0",
     "axios": "^1.7.9",
     "json-server": "^1.0.0-beta.3",
     "react": "^18.3.1",

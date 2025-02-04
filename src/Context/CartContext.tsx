@@ -1,30 +1,30 @@
-import React, { useState, createContext, useEffect } from 'react';
-import { CartContextType, CartProviderProps, Product } from '../types/type';
-import { updateCart , updateProduct} from '../utils/cartUtils';
-import { fetchProducts } from '../service/api';
+import React, { createContext } from "react";
+import { CartContextType, CartProviderProps, Product } from "../types/type";
+import { updateCart, updateProduct } from "../utils/cartUtils";
+import { fetchCart, fetchProducts } from "../service/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-
- export const CartContext = createContext<CartContextType | undefined>(undefined);
+export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  const [cart, setCart] = useState<Product[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
- 
-  useEffect(() => {
-    const loadProducts = async () => {
-      const data = await fetchProducts();
-      setProducts(data);
-    };
-    loadProducts();
-  }, []);
-  
+  const queryClient = useQueryClient();
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+  });
+
+  const { data: cart = [] } = useQuery({
+    queryKey: ["cart"],
+    queryFn: fetchCart,
+  });
 
   const modifyStock = (id: number, amount: number) => {
-    setProducts((prev) => updateProduct(prev, id, amount));
+    queryClient.setQueryData<Product[]>(["products"], (prev = []) => updateProduct(prev, id, amount));
   };
 
   const modifyCart = (id: number, amount: number) => {
-    setCart((prev) => updateCart(prev, products, id, amount));
+    queryClient.setQueryData<Product[]>(["cart"], (prev = []) => updateCart(prev, products, id, amount));
   };
 
   const addToCart = (product: Product) => {
@@ -48,21 +48,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const removeItem = (product: Product) => {
-    setCart((prev) => prev.filter((item) => item.id !== product.id));
+    queryClient.setQueryData<Product[]>(["cart"], (prev = []) => prev.filter((item) => item.id !== product.id));
     modifyStock(product.id, product.stock);
   };
 
   const clearCart = () => {
-    setProducts((prev) =>
+    queryClient.setQueryData<Product[]>(["products"], (prev = []) =>
       prev.map((product) => {
         const cartItem = cart.find((item) => item.id === product.id);
         return cartItem ? { ...product, stock: product.stock + cartItem.stock } : product;
       })
     );
-    setCart([]);
+    queryClient.setQueryData(["cart"], []);
   };
 
-  
   return (
     <CartContext.Provider
       value={{
@@ -72,7 +71,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         increaseQuantity,
         decreaseQuantity,
         removeItem,
-        clearCart
+        clearCart,
       }}
     >
       {children}
