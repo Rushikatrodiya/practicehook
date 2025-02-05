@@ -1,9 +1,14 @@
+// src/components/Cart.tsx
 import React from "react";
-import useCart from "../hooks/useCart";
-import ProductCard from "./ui/ProductCard";
+import useCart from "../hooks/useCart"
+// import Card from "../ui/Card";
+import { Product } from "../types/type";
+import Button from "./ui/Button";
+import Card from "./ui/Card";
+// import Button from "../ui/Button";
 
 const CartPage: React.FC = () => {
-  const { cart, increaseQuantity, decreaseQuantity, removeItem, clearCart } = useCart();
+  const { cart,clearCart} = useCart();
 
   return (
     <div>
@@ -11,18 +16,15 @@ const CartPage: React.FC = () => {
       {cart.length === 0 ? (
         <p>Cart is empty</p>
       ) : (
-        cart.map((item) => (
-          <ProductCard
-            key={item.id}
-            product={item}
-            inCart={true}
-            onIncrease={increaseQuantity}
-            onDecrease={decreaseQuantity}
-            onRemove={removeItem}
-          />
+        cart.map((item:Product) => (
+          <Card type={"cartlist"} product={item}  key={item.id}/>
         ))
       )}
-      {cart.length > 0 && <button onClick={clearCart}>Clear Cart</button>}
+      {cart.length > 0 && (
+        <div>
+            <Button action={clearCart}>Clear Cart</Button>
+        </div>
+      )}
     </div>
   );
 };

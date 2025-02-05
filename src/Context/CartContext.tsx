@@ -1,74 +1,106 @@
-import React, { createContext, useContext } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchCart, fetchProducts, addToCart, removeCartItem } from "../service/api";
+import React, { useState, createContext, useEffect } from "react";
 import { CartContextType, CartProviderProps, Product } from "../types/type";
+// import { updateCart, updateProduct } from "../utils/CartUtils";
+import { addToCart, clearCart, decreaseQuantity, fetchCart, fetchProducts, increaseQuantity, removeItem } from "../service/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const CartContext = createContext<CartContextType | undefined>(undefined);
+export const CartContext = createContext<CartContextType>({
+  products: [],
+  cart: [],
+  addToCart: () => {},
+  increaseQuantity: () => {},
+  decreaseQuantity: () => {},
+  removeItem: () => {},
+  clearCart: () => {},
+});
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const queryClient = useQueryClient();
-
-  // Fetch products
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
   });
 
-  // Fetch cart
-  const { data: cart = [] } = useQuery({
-    queryKey: ["cart"],
-    queryFn: fetchCart,
+  const { data : cart = []} = useQuery({
+    queryKey: ['cart'],
+    queryFn: fetchCart 
   });
 
-  // Mutation to add item to cart
   const addToCartMutation = useMutation({
     mutationFn: addToCart,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] }); // Refresh cart data
-      queryClient.invalidateQueries({ queryKey: ["products"] }); // Refresh products stock
+      queryClient.invalidateQueries({ queryKey: ["cart"] }); 
+      queryClient.invalidateQueries({ queryKey: ["products"] }); 
     },
-  });
+  }); 
 
-  // Mutation to remove item from cart
-  const removeItemMutation = useMutation({
-    mutationFn: removeCartItem,
+  
+  const removeToCartMutation = useMutation({
+    mutationFn:removeItem,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-    },
-  });
+      queryClient.invalidateQueries({ queryKey: ['cart']});
+      queryClient.invalidateQueries({ queryKey: ["products"] }); 
+    }
+  })
+  
+  const increaseToCartMutation = useMutation({
+    mutationFn:increaseQuantity,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({queryKey: ['products']})
+    }
+  })
 
-  // Function to handle adding item to cart
+  const decreaseToCartMutation = useMutation({
+    mutationFn:decreaseQuantity,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({queryKey: ['products']})
+    }
+  })
+
+  const clearCartMutation = useMutation({
+    mutationFn:clearCart,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey : ['cart'] }),
+      queryClient.invalidateQueries({ queryKey: ['products']})
+    }
+  })
+
   const handleAddToCart = (product: Product) => {
     if (product.stock > 0) {
       addToCartMutation.mutate(product);
     }
   };
 
-  // Function to handle removing an item from cart
-  const handleRemoveItem = (id: number) => {
-    removeItemMutation.mutate(id);
-  };
+  const handleRemoveToCart = (id:string) => {
+    removeToCartMutation.mutate(id)
+  }
+
+  const handleIncreaseToQuantity = (id:string) => {
+    increaseToCartMutation.mutate(id)
+  }
+
+  const handleDecreaseToQuantity = (id:string) => {
+    decreaseToCartMutation.mutate(id)
+  }
+  const handleClearCart = () => {
+    clearCartMutation.mutate()
+  }
 
   return (
     <CartContext.Provider
       value={{
         cart,
         products,
-        addToCart: handleAddToCart,
-        removeItem: handleRemoveItem,
+         addToCart: handleAddToCart,
+        increaseQuantity: handleIncreaseToQuantity,
+        decreaseQuantity: handleDecreaseToQuantity,
+        removeItem: handleRemoveToCart,
+        clearCart:handleClearCart
       }}
     >
       {children}
     </CartContext.Provider>
   );
 };
-
-// // Hook to use cart context
-// export const useCart = () => {
-//   const context = useContext(CartContext);
-//   if (!context) {
-//     throw new Error("useCart must be used within a CartProvider");
-//   }
-//   return context;
-// };

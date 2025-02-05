@@ -4,27 +4,39 @@
       "id": "1",
       "name": "Product Adifsjdosdposdhf",
       "price": 100,
-      "stock": 10
+      "stock": 0
     },
     {
       "id": "2",
       "name": "Product B",
       "price": 200,
-      "stock": 3
+      "stock": 0
     },
     {
       "id": "3",
       "name": "Product C",
       "price": 300,
-      "stock": 8
+      "stock": 0
     }
   ],
   "cart": [
     {
+      "id": "3",
+      "name": "Product C",
+      "price": 300,
+      "stock": 11
+    },
+    {
+      "id": "1",
+      "name": "Product Adifsjdosdposdhf",
+      "price": 100,
+      "stock": 12
+    },
+    {
       "id": "2",
       "name": "Product B",
       "price": 200,
-      "stock": 2
+      "stock": 10
     }
   ]
 }

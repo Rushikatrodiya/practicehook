@@ -1,16 +1,16 @@
-import React from "react";
+import {  Product  } from "../types/type";
+
 import useCart from "../hooks/useCart";
-import { Product } from "../types/type";
-import ProductCard from "./ui/ProductCard";
+import Card from "./ui/Card";
+// import Card from "../ui/Card";
 
 const ProductList: React.FC = () => {
-  const { products, addToCart } = useCart();
-
+  const { products } = useCart()
   return (
     <div>
       <h2>Products</h2>
       {products.map((product: Product) => (
-        <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+        <Card product={product}  key={product.id} type="product"/>
       ))}
     </div>
   );

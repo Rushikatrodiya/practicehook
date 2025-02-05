@@ -1,17 +1,11 @@
-import React from "react";
+import React from 'react'
+import { BtnComponent } from '../../types/type'
+// import { BtnComponent } from '../types/type'
 
-type ButtonProps = {
-  onClick: () => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-};
-
-const Button: React.FC<ButtonProps> = ({ onClick, disabled = false, children }) => {
+const Button: React.FC<BtnComponent> = ({children, action}) => {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ margin: "4px", padding: "8px" }}>
-      {children}
-    </button>
-  );
-};
+    <button onClick ={action}>{children}</button>
+  )
+}
 
-export default Button;
+export default Button
