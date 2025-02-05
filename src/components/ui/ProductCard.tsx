@@ -31,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             -
           </Button>
           <Button onClick={() => onIncrease?.(product.id)}>+</Button>
-          <Button onClick={() => onRemove?.(product)}>Remove</Button>
+          <Button onClick={() => onRemove?.(product.id)}>Remove</Button>
         </>
       ) : (
         <Button onClick={() => onAddToCart?.(product)} disabled={product.stock === 0}>

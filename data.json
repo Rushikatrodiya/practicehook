@@ -1,23 +1,30 @@
 {
   "products": [
     {
-      "id": 1,   
+      "id": "1",
       "name": "Product Adifsjdosdposdhf",
       "price": 100,
       "stock": 10
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Product B",
       "price": 200,
-      "stock": 5
+      "stock": 3
     },
     {
-      "id": 3,
+      "id": "3",
       "name": "Product C",
       "price": 300,
       "stock": 8
     }
   ],
-  "cart": []
+  "cart": [
+    {
+      "id": "2",
+      "name": "Product B",
+      "price": 200,
+      "stock": 2
+    }
+  ]
 }

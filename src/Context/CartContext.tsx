@@ -1,83 +1,53 @@
-import React, { createContext } from "react";
+import React, { createContext, useContext } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchCart, fetchProducts, addToCart, removeCartItem } from "../service/api";
 import { CartContextType, CartProviderProps, Product } from "../types/type";
-import { fetchCart, fetchProducts } from "../service/api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const queryClient = useQueryClient();
 
+  // Fetch products
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
   });
 
+  // Fetch cart
   const { data: cart = [] } = useQuery({
     queryKey: ["cart"],
     queryFn: fetchCart,
   });
 
-  // Modify product stock directly within the CartProvider
-  const modifyStock = (id: number, amount: number) => {
-    queryClient.setQueryData<Product[]>(["products"], (prev = []) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, stock: Math.max(0, p.stock + amount) } : p
-      )
-    );
+  // Mutation to add item to cart
+  const addToCartMutation = useMutation({
+    mutationFn: addToCart,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] }); // Refresh cart data
+      queryClient.invalidateQueries({ queryKey: ["products"] }); // Refresh products stock
+    },
+  });
+
+  // Mutation to remove item from cart
+  const removeItemMutation = useMutation({
+    mutationFn: removeCartItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+
+  // Function to handle adding item to cart
+  const handleAddToCart = (product: Product) => {
+    if (product.stock > 0) {
+      addToCartMutation.mutate(product);
+    }
   };
 
-  // Modify cart directly within the CartProvider
-  const modifyCart = (id: number, amount: number) => {
-    queryClient.setQueryData<Product[]>(["cart"], (prev = []) => {
-      const existingItem = prev.find((item) => item.id === id);
-      if (existingItem) {
-        return prev.map((item) =>
-          item.id === id ? { ...item, stock: item.stock + amount } : item
-        );
-      } else {
-        const product = products.find((p) => p.id === id);
-        if (!product || product.stock <= 0) return prev;
-        return [...prev, { ...product, stock: 1 }];
-      }
-    });
-  };
-
-  const addToCart = (product: Product) => {
-    if (product.stock <= 0) return;
-    modifyStock(product.id, -1); // Decrease product stock
-    modifyCart(product.id, 1); // Add to cart
-  };
-
-  const increaseQuantity = (id: number) => {
-    const product = products.find((p) => p.id === id);
-    if (!product || product.stock <= 0) return;
-    modifyStock(id, -1); // Decrease product stock
-    modifyCart(id, 1); // Increase cart quantity
-  };
-
-  const decreaseQuantity = (id: number) => {
-    const cartItem = cart.find((item) => item.id === id);
-    if (!cartItem || cartItem.stock <= 1) return;
-    modifyStock(id, 1); // Increase product stock
-    modifyCart(id, -1); // Decrease cart quantity
-  };
-
-  const removeItem = (product: Product) => {
-    queryClient.setQueryData<Product[]>(["cart"], (prev = []) =>
-      prev.filter((item) => item.id !== product.id)
-    );
-    modifyStock(product.id, product.stock); // Restore product stock
-  };
-
-  const clearCart = () => {
-    queryClient.setQueryData<Product[]>(["products"], (prev = []) =>
-      prev.map((product) => {
-        const cartItem = cart.find((item) => item.id === product.id);
-        return cartItem ? { ...product, stock: product.stock + cartItem.stock } : product;
-      })
-    );
-    queryClient.setQueryData(["cart"], []);
+  // Function to handle removing an item from cart
+  const handleRemoveItem = (id: number) => {
+    removeItemMutation.mutate(id);
   };
 
   return (
@@ -85,14 +55,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       value={{
         cart,
         products,
-        addToCart,
-        increaseQuantity,
-        decreaseQuantity,
-        removeItem,
-        clearCart,
+        addToCart: handleAddToCart,
+        removeItem: handleRemoveItem,
       }}
     >
       {children}
     </CartContext.Provider>
   );
 };
+
+// // Hook to use cart context
+// export const useCart = () => {
+//   const context = useContext(CartContext);
+//   if (!context) {
+//     throw new Error("useCart must be used within a CartProvider");
+//   }
+//   return context;
+// };
