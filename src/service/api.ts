@@ -72,7 +72,7 @@ export const decreaseQuantity = async (id: string) => {
   const { data: cart } = await axios.get(`${BASE_URL}/cart`);
   const item = cart.find((p: Product) => p.id === id);
 
-  if (!item || item.stock <= 0) return;
+  if (!item || item.stock <= 1) return;
 
   await axios.put(`${BASE_URL}/cart/${id}`, {
     ...item,
@@ -88,29 +88,21 @@ export const decreaseQuantity = async (id: string) => {
 };
 
 export const clearCart = async () => {
-  try {
-    // Step 1: Fetch the current cart
-    const { data: cart } = await axios.get(`${BASE_URL}/cart`);
-
-    // Step 2: Process each item one by one
-    for (const item of cart) {
-      // Fetch the corresponding product details
-      const { data: product } = await axios.get(`${BASE_URL}/products/${item.id}`);
-
-      // Step 3: Restore product stock
+  const { data: cart } = await axios.get(`${BASE_URL}/cart`);
+  
+  await Promise.all(
+    cart.map(async (item: Product) => {
+      const product = await axios.get(`${BASE_URL}/products/${item.id}`);
       await axios.put(`${BASE_URL}/products/${item.id}`, {
-        ...product,
-        stock: product.stock + item.stock,
+        ...product.data,
+        stock: product.data.stock + item.stock,
       });
-
-      // Step 4: Remove item from the cart
       await axios.delete(`${BASE_URL}/cart/${item.id}`);
-    }
+    })
+  );
 
-    console.log("Cart cleared successfully!"); // Log success message
-  } catch (error) {
-    console.error("Error clearing cart:", error); // Handle any errors
-  }
+  console.log("Cart cleared successfully!");
 };
+
 
 

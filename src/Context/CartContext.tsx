@@ -1,9 +1,9 @@
-import React, { useState, createContext, useEffect } from "react";
+import React, { createContext } from "react";
 import { CartContextType, CartProviderProps, Product } from "../types/type";
-// import { updateCart, updateProduct } from "../utils/CartUtils";
 import { addToCart, clearCart, decreaseQuantity, fetchCart, fetchProducts, increaseQuantity, removeItem } from "../service/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+// Context with default values
 export const CartContext = createContext<CartContextType>({
   products: [],
   cart: [],
@@ -14,90 +14,40 @@ export const CartContext = createContext<CartContextType>({
   clearCart: () => {},
 });
 
-export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
+// Custom hook for creating mutations
+const useCartMutation = (mutationFn: (arg: any) => Promise<any>) => {
   const queryClient = useQueryClient();
-  const { data: products = [] } = useQuery({
-    queryKey: ["products"],
-    queryFn: fetchProducts,
-  });
-
-  const { data : cart = []} = useQuery({
-    queryKey: ['cart'],
-    queryFn: fetchCart 
-  });
-
-  const addToCartMutation = useMutation({
-    mutationFn: addToCart,
+  return useMutation({
+    mutationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] }); 
-      queryClient.invalidateQueries({ queryKey: ["products"] }); 
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
-  }); 
+  });
+};
 
-  
-  const removeToCartMutation = useMutation({
-    mutationFn:removeItem,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart']});
-      queryClient.invalidateQueries({ queryKey: ["products"] }); 
-    }
-  })
-  
-  const increaseToCartMutation = useMutation({
-    mutationFn:increaseQuantity,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      queryClient.invalidateQueries({queryKey: ['products']})
-    }
-  })
+export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
+  // Fetch queries
+  const { data: products = [] } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
+  const { data: cart = [] } = useQuery({ queryKey: ["cart"], queryFn: fetchCart });
 
-  const decreaseToCartMutation = useMutation({
-    mutationFn:decreaseQuantity,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      queryClient.invalidateQueries({queryKey: ['products']})
-    }
-  })
-
-  const clearCartMutation = useMutation({
-    mutationFn:clearCart,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey : ['cart'] }),
-      queryClient.invalidateQueries({ queryKey: ['products']})
-    }
-  })
-
-  const handleAddToCart = (product: Product) => {
-    if (product.stock > 0) {
-      addToCartMutation.mutate(product);
-    }
-  };
-
-  const handleRemoveToCart = (id:string) => {
-    removeToCartMutation.mutate(id)
-  }
-
-  const handleIncreaseToQuantity = (id:string) => {
-    increaseToCartMutation.mutate(id)
-  }
-
-  const handleDecreaseToQuantity = (id:string) => {
-    decreaseToCartMutation.mutate(id)
-  }
-  const handleClearCart = () => {
-    clearCartMutation.mutate()
-  }
+  // Mutations using the custom hook
+  const addToCartMutation = useCartMutation(addToCart);
+  const removeItemMutation = useCartMutation(removeItem);
+  const increaseQuantityMutation = useCartMutation(increaseQuantity);
+  const decreaseQuantityMutation = useCartMutation(decreaseQuantity);
+  const clearCartMutation = useCartMutation(clearCart);
 
   return (
     <CartContext.Provider
       value={{
         cart,
         products,
-         addToCart: handleAddToCart,
-        increaseQuantity: handleIncreaseToQuantity,
-        decreaseQuantity: handleDecreaseToQuantity,
-        removeItem: handleRemoveToCart,
-        clearCart:handleClearCart
+        addToCart: (product: Product) => product.stock > 0 && addToCartMutation.mutate(product),
+        increaseQuantity: (id: string) => increaseQuantityMutation.mutate(id),
+        decreaseQuantity: (id: string) => decreaseQuantityMutation.mutate(id),
+        removeItem: (id: string) => removeItemMutation.mutate(id),
+        clearCart: () => clearCartMutation.mutate(undefined),
       }}
     >
       {children}
